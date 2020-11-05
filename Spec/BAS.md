@@ -74,7 +74,7 @@ Constants and literals are collectively known as *numerals*.
 
 Note that BAS is optimised for position-independent code -- regardless of whether a label is absolute or relative, it is always represented in the output as a relative offset. If the absolute address of a label is needed, it may be expressed as `%.+:label`.
 
-Single binary operations are permitted in some circumstances: a label may have a positive or negative offset of any symbol type; a numeral may be sliced with `[y-x]`, where `y` and `x` are the inclusive top and bottom of the bit range, as unadorned unsigned integers; and a literal or internal constant may be acted on by a numeral with one of the following operators:
+Single binary operations are permitted in some circumstances: a label may have a positive or negative offset of any symbol type; a numeral may be sliced with `[y:x]`, where `y` and `x` are the inclusive top and bottom of the bit range, as unadorned unsigned integers; and a literal or internal constant may be acted on by a numeral with one of the following operators:
 * `+` (addition)
 * `-` (subtraction)
 * `*` (multiplication)
