@@ -3,7 +3,7 @@ Manually Insert and Cross-Resolve
 A non-intrusive linker and symbol resolver.
 
 ## Overview
-MIXR takes multiple TABs/DECs as input and produces a single TAB/DEC as output. It is designed to do the minimum work possible such that AMP can load the result. Its primary functions are grouping of input sections into output sections and resolving import relocations to cross table relocations. The first of these is dictated by an input file known as a TRAC, and the second by another known as a SLDR.
+MIXR takes multiple TABs/DECs as input and produces a single TAB/DEC as output. It is designed to do the minimum work possible such that AMP can load the result. Its primary functions are grouping of input sections into output sections and resolving import relocations to cross table relocations. The first of these is dictated by an input file known as a TRAC, and the second by another known as a SLDR -- these are compiled to a lightweight binary format before use.
 
 # Terse Regional Arrangement of Code
 The following is an example TRAC:
