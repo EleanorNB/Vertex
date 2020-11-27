@@ -7,7 +7,7 @@ Most constructs are preceded by sigils, and any lists have explicit separators o
 Assembly is done per source file, and outputs a single TAB or DEC (TABs have sections and imports, DECs do not). External labels and TABs/DECs are coordinated by MIXR.
 
 ## Directives and Statements
-Directives start with `.` and consist of alphanumerics. Directives may have arguments, and those arguments may themselves have arguments: top-level arguments are separated with `;`, the first of which is optional; sub-arguments are separated with `,`, likewise. Directive statements run until the first newline after the directive, an argument, or a sub-argument not terminated with `;` or `,`; `.` on its own can be used to terminate multiline statements without adding an argument.
+Directives start with `.` and consist of alphanumerics. Directives may have arguments, and those arguments may be lists or themselves have arguments: top-level arguments are separated from the directive with non-breaking whitespace and each other with `;`; sub-arguments and list elements are separated from the argument with non-breaking whitespace and from each other with `,`. Directive statements run until the first newline after the directive, an argument, or a sub-argument not terminated with `;` or `,`; `.` on its own can be used to terminate multiline statements without adding an argument.
 
 ### Example
 ```
@@ -19,9 +19,9 @@ Directives start with `.` and consist of alphanumerics. Directives may have argu
 
 .section "code"; type vs; align $4
 
-# This particular directive is a no-op in base, hence why it is allowed outside leading position
-# -- it provides upward compatibility for more sophisticated linkers
-:myfunc .fn (
+# The base implementation will error on this
+# -- it is defined for more sophisticated assemblers
+.macro mymacro; a~reg, b~int, c~adr; (
     # ...
 )
 
@@ -67,29 +67,27 @@ Operators are the only unadorned leading elements. Arguments after the first are
 There are five kinds of symbols: **absolute**, **relative**, **constant**, **external**, and **literal**. The first four must consist solely of alphanumerics and underscores. There is no first character requirement, however users may implement their own naming conventions.
 * Absolute labels refer to locations in the output TAB or DEC. They are declared at the beginning of a line as `:label`, and referenced from anywhere in the file in the same format. There may not be duplicates.
 * Relative labels are declared at the beginning of a line as `%label`. They differ from absolute labels in allowing duplicates, as well as requiring a direction when referencing (`%>label` for look-ahead, `%<label` for look-behind, `%.` for the current instruction). Referenced relative labels must be within the same section.
-* Constants are declared as `.const x $4; y $5`, and referenced as `!x`. Labels of any kind and later-defined constants are not permitted in constant declarations.
+* Constants are declared as `.const x $4; y $5`, and referenced as `*x`. Labels of any kind and later-defined constants are not permitted in constant declarations.
 * External symbols are declared in other files as either constants or absolute labels, and then `.export`ed. They must then be imported with either `.extern` or `.import`. External labels are referenced as `@label`, external constants are referenced as `^x`.
 * Numeric literals begin with `$`, followed by an optional sign ([`+`]/`-`), then an optional base (`x`/`b`/[`d`]), and finally the digits. Their range is determined by their context -- in particular, a sign is disallowed in unsigned contexts, and mandatory in signed contexts. Exceeding this range is a fatal error. Constants have a (platform width + 1)-bit signed range.
 Constants and literals are collectively known as *numerals*.
 
-Note that BAS is optimised for position-independent code -- regardless of whether a label is absolute or relative, it is always represented in the output as a relative offset. If the absolute address of a label is needed, it may be expressed as `%.+:label`.
+Bit interpretation of a symbol is up to BAS -- in particular, a label may resolve to a relative or absolute offset, depending on the instruction. If no specific rule exists for a case, constants are interpreted as absolute, and labels as relative -- if the opposite is desired, the author may add or subtract `%.`, as described below.
 
 Single binary operations are permitted in some circumstances: a label may have a positive or negative offset of any symbol type; a numeral may be sliced with `[y:x]`, where `y` and `x` are the inclusive top and bottom of the bit range, as unadorned unsigned integers; and a literal or internal constant may be acted on by a numeral with one of the following operators:
 * `+` (addition)
 * `-` (subtraction)
 * `*` (multiplication)
-* `/` (flooring division)
-* `<` (left shift, logical)
-* `>` (right shift, logical)
-* `|>` (right shift, arithmetic)
+* `/` (division, rounding in direction opposite denominator sign)
+* `%` (modulus, sign equal to base sign)
 * `&` (bitwise and)
 * `|` (bitwise or)
 * `^` (bitwise xor)
 
-(Note: in the output TAB, left shift is actually multiplication, and arithmetic right shift is actually flooring division -- their functionality is equivalent, and performance does not matter as much in this context. A sophisticated linker may apply this optimisation to improve its own efficiency, however this is not required.)
+For upward compatibility with more sophisticated assemblers, the *scope* of a label may be specified by enclosing it in `()` (for instance, a function body, or a data table). The open parenthesis must be on the same line as the label declaration. The base implementation will ignore this.
 
-## Macros
-For upward compatibility with more sophisticated assemblers, BAS defines a standard macro escape mechanism: enclosing macro code in ``. The syntax and semantics of code so enclosed is considered out of scope, and the base implementation will error if it detects such a sequence.
+# Macros
+BAS defines a `.macro` directive, for use with more sophisticated assemblers. A macro declaration takes a name, a list of parameters with names and types, and a scope. Parameter types are `reg` (register), `int` (numeral), and `adr` (label). Within the macro body, a parameter may be referenced by prepending it with `~`. A macro is invoked with `!macroname arg1, arg2...`, and the effect of an invocation is to splice the code of the macro into the program at the invocation site with references to the parameters replaced by the passed arguments.
 
 ## Comments
-Conmments begin with `#` and run to the end of the line.
+Comments begin with `#` and run to the end of the line.

@@ -2,7 +2,7 @@
 A segmented binary format for straightforward linking and loading.
 
 ## Structure
-A TAB file has the following structure, not including the file header:
+A TAB file has the following structure, not including the file header (**FIXME**: this representation does not encode table length in entries):
 * Metatable (M)
   - arch Mo:b (32), OS Mo:b (32), ABI Mo:b (32)
   - extern table Mo:b (32), import table Mo:b (32)
@@ -84,9 +84,9 @@ This lists the **relocations** in the code, that is, information that cannot be 
 A relocation operation:
 - finds the (high-low+1)-length bit slice at the specified program byte and bit offset (accounting for platform endianness)
   - if this relocation is non-terminal, collects consecutive relocations until the terminal, and checks that they have the same operation and unknown (or that unknowns are contiguous and the full range of each is covered before moving to the next), and contiguous bit ranges -- fails linking if not
-- constructs a left operand by sign-extending the known range and zeroing lower bits
+- constructs a left operand by either sign-extending or zero-extending the known range, depending on the instruction containing the topmost bit, and zeroing lower bits
 - constructs a right operand by concatenating symbols, and in the case of labels, subtracting the current program and relative section offset
-- applies the specified operator, which may be: add, subtract, multiply, flooring divide, logical right shift, bitwise and, bitwise or, or bitwise xor, with the computed operands
+- applies the specified operator, which may be: add, subtract, multiply, divide (rounding in direction opposite denominator sign), modulus (sign equal to base sign), bitwise and, bitwise or, or bitwise xor, with the computed operands
 - writes the [high:low] bits of the result back to the original bit slice or slices
 
 A terminal/non-terminal bit is necessary to prevent internal rounding errors. This has the unfortunate consequence of not leaving any encoding space for a sign bit -- however, this is only significant for division of large unsigned numbers, which is rare. Label relocations have a subtlety, in that the byte offset of the relocation itself may not be the byte offset of the instruction that contains it -- in additive or subtractive cases, a corrective factor at the program location will cancel this; in others, well, you deserve what you get if you try to do that.
